@@ -1,9 +1,77 @@
-import { cookies } from "next/headers";
-import Client from "./client";
+"use client";
 
-export default async function Home() {
-  const cookie =
-    "eyJ0eXAiOiJKV1QiLCJraWQiOiJuWTkxZmt2T3lrWmpFTDBTa3R1WGJBWkdGcEJ5LXc1OXFaTWluZDg4SDBVIiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJodHRwczovL3FhMi5zdGFnaW5nLnVuaWR5LmRlIiwic3ViIjoiM2FlOTExYWMtZTI3MS00MjE5LTgxY2EtZDA2ODBjY2U2N2M4IiwiYXVkIjoiSXJXRWRjQWhOMXlDcGQzZUlubjF0bmRDQ3VBSHA4UVFwV3BiY0xvcV9HOCIsImV4cCI6MTc1MDc1ODA5MCwiaWF0IjoxNzUwNzU3OTcwLCJhdXRoX3RpbWUiOjE3NTA3NTcxMzEsImVtYWlsIjoiZnJhbi56ZWthbkB1bmlkeS5kZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJnaXZlbl9uYW1lIjoiQW5vdGhlciIsImZhbWlseV9uYW1lIjoiWmlkYW5lIDIiLCJuYW1lIjoiQW5vdGhlciBaaWRhbmUgMiIsInVwZGF0ZWRfYXQiOjE3NTA3NTcxMzF9.qyjkfLRroPLqjCXEoXc5Pyx8uHap5arWUFDzCR7vbre9b2ROMyzUhTIZAiTUQ_ogVbyzHuN7LsAgbe5zHYv-kBMI3ve24OyycaZ352SStuI9gR13rwFhRIctwqzxH6lgPaXzVlMjLTO_5Mq505GMkin8ritqR2T9tCIl1r4oAIGzaJ_iw5Oma5HJM4SyQEVejpk4vfFXxqrYMkLHkIGn0x8IOEZVBoF6FbJLNypKi4g91_RF02GeCpYqOny2dfyeMHSNTcIFcqeH8tT07_szb5Reg7KRmZ-f7nah0cUQ7yfa1yMqxdDgVsoCyUHBUxlW9CrQbXRsBILvjT8sxuMrew"; //cookies().get("unidy-auth-token");
+import { useEffect, useRef, useState } from "react";
+import { UnidyAuth } from "@unidy.io/auth";
 
-  return <Client cookie={cookie} />;
+import "../node_modules/@unidy.io/auth/dist/esm/unidy-login";
+
+const useUnidyAuth = () => {
+  const [state, setState] = useState<{
+    isAuthenticated: boolean;
+    user: any;
+  }>({ isAuthenticated: false, user: null });
+
+  const [client] = useState(() => {
+    return new UnidyAuth().init("https://qa2.staging.unidy.de", {
+      clientId: "IrWEdcAhN1yCpd3eInn1tndCCuAHp8QQpWpbcLoq_G8",
+      scope: "openid profile email",
+      redirectUrl: "http://localhost:3000/",
+      onAuth: (token: string) => {
+        setState({
+          isAuthenticated: true,
+          user: client.userTokenData(),
+        });
+      },
+    });
+  });
+
+  const ref = useRef(false);
+  useEffect(() => {
+    if (!ref.current) {
+      client.mountComponent();
+      client.isAuthenticated().then((res) => {
+        setState({
+          isAuthenticated: res,
+          user: client.userTokenData(),
+        });
+      });
+
+      ref.current = true;
+    }
+  }, [client]);
+
+  return {
+    client,
+    state,
+    logout: () => {
+      client.logout().then(() => {
+        setState({ isAuthenticated: false, user: null });
+      });
+    },
+  };
+};
+
+export default function Client({ cookie }: { cookie: string }) {
+  const { client, state, logout } = useUnidyAuth(cookie);
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold">Unidy Auth</h1>
+
+      {!state.isAuthenticated && (
+        <button id="fcsp-login-btn" onClick={() => client.auth()}>
+          Login
+        </button>
+      )}
+
+      <div>Authenticated: {state.isAuthenticated ? "true" : "false"}</div>
+      <div>User: {JSON.stringify(state.user)}</div>
+
+      {state.isAuthenticated && (
+        <button id="fcsp-logout-btn" onClick={logout}>
+          Logout
+        </button>
+      )}
+    </div>
+  );
 }
