@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { UnidyAuth } from "@unidy.io/auth";
 
+// hack for now, shouldn't be needed
 import "../node_modules/@unidy.io/auth/dist/esm/unidy-login";
 
 const useUnidyAuth = () => {
@@ -16,7 +17,7 @@ const useUnidyAuth = () => {
       clientId: "IrWEdcAhN1yCpd3eInn1tndCCuAHp8QQpWpbcLoq_G8",
       scope: "openid profile email",
       redirectUrl: "http://localhost:3000/",
-      onAuth: (token: string) => {
+      onAuth: (_token: string) => {
         setState({
           isAuthenticated: true,
           user: client.userTokenData(),
@@ -29,7 +30,8 @@ const useUnidyAuth = () => {
   useEffect(() => {
     if (!ref.current) {
       client.mountComponent();
-      client.isAuthenticated().then((res) => {
+      // TODO: fix type
+      client.isAuthenticated().then((res: boolean) => {
         setState({
           isAuthenticated: res,
           user: client.userTokenData(),
@@ -51,8 +53,8 @@ const useUnidyAuth = () => {
   };
 };
 
-export default function Client({ cookie }: { cookie: string }) {
-  const { client, state, logout } = useUnidyAuth(cookie);
+export default function Client() {
+  const { client, state, logout } = useUnidyAuth();
 
   return (
     <div>
