@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+// @ts-expect-error TODO: Fix types
 import { UnidyAuth } from "@unidy.io/auth";
 
 // hack for now, shouldn't be needed
